@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PhySim 3D</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ctext y='.9em' font-size='9'%3E⚛️%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f8fafc;--card:#fff;--ink:#0f172a;--mut:#475569;--line:#cbd5e1;--acc:#0284c7;--btn:#e2e8f0;--ok:#047857;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#020617;--card:#0f172a;--ink:#e2e8f0;--mut:#94a3b8;--line:#1e293b;--acc:#38bdf8;--btn:#1e293b;--ok:#6ee7b7}}
+:root[data-theme="dark"]{--bg:#020617;--card:#0f172a;--ink:#e2e8f0;--mut:#94a3b8;--line:#1e293b;--acc:#38bdf8;--btn:#1e293b;--ok:#6ee7b7}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 12px 0 0}
+button,select{font:inherit;color:var(--ink);background:var(--btn);border:0;border-radius:999px;padding:6px 14px;cursor:pointer}
+button.on{background:var(--acc);color:#fff}
+.sp{margin-left:auto;display:flex;gap:8px}
+main{display:grid;gap:16px;padding:16px;grid-template-columns:1fr 1fr}
+main.full{grid-template-columns:1fr}main.full #left{display:none}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
+.tex{overflow-x:auto;padding:6px 0;font-size:1.15em}
+.calc{font-family:ui-monospace,Menlo,monospace;color:var(--ok);font-size:13px}
+.ask{color:var(--acc);background:none;padding:0;text-decoration:underline;border-radius:0}
+#simwrap{position:relative;min-height:420px;height:calc(100vh - 110px);border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#020617}
+#cv{width:100%;height:100%;display:block}
+#hud{position:absolute;left:10px;top:10px;background:rgba(2,6,23,.82);color:#e2e8f0;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px;border-radius:10px;pointer-events:none}
+#dock{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:rgba(15,23,42,.92);padding:8px 12px;border-radius:999px;max-width:96%;flex-wrap:wrap;justify-content:center}
+#dock button{background:#1e293b;color:#fff;padding:6px 12px}
+#dock span{color:#e2e8f0;font-size:12px}
+textarea,input[type=text]{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit}
+#fab{position:fixed;bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));right:1.5rem;width:56px;height:56px;border-radius:50%;background:var(--acc);color:#fff;font-size:24px;padding:0;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:50}
+#tutor{position:fixed;bottom:calc(6rem + env(safe-area-inset-bottom,0px));right:1.5rem;width:min(22rem,calc(100vw - 2rem));height:28rem;max-height:70vh;display:none;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#tutor.open{display:flex}#log{flex:1;overflow-y:auto;padding:10px;font-size:14px}
+.m{padding:8px;border-radius:10px;margin-bottom:8px;white-space:pre-wrap}.u{background:var(--acc);color:#fff;margin-left:30px}.a{background:var(--btn);margin-right:30px}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+#sheet.open{display:flex}#sheet>div{background:var(--card);max-width:680px;width:100%;max-height:85vh;overflow:auto;border-radius:16px;padding:20px}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:5px 0;font-size:14px}
+#prac{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}#prac.open{display:flex}#prac>div{background:var(--card);max-width:680px;width:100%;max-height:88vh;overflow:auto;border-radius:16px;padding:20px}
+.warn{background:rgba(245,158,11,.15);border:1px solid #f59e0b;border-radius:10px;padding:8px 12px;font-size:14px;margin:8px 0}
+</style></head><body>
+<header><h1>⚛️ PhySim 3D</h1><div id="presets"></div>
+<div class="sp"><button id="bprac" class="on"></button><button id="bsheet"></button><button id="blang">ID</button></div></header>
+<main id="main">
+<section id="left"><div class="card" id="problem"></div><div id="steps"></div>
+<div class="card"><div class="lbl" id="clbl"></div><textarea id="custom" rows="3"></textarea><div class="warn" id="cwarn" hidden></div><div id="cres"></div>
+<p style="display:flex;gap:14px;margin:8px 0 0"><label class="ask" id="upl" style="cursor:pointer">📷 <span id="ulbl"></span><input id="file" type="file" accept="image/*" hidden></label><button class="ask" id="cask"></button><button class="on" id="csolve"></button></p></div></section>
+<section id="simwrap"><canvas id="cv"></canvas><div id="hud"></div>
+<div id="dock"><button id="play">▶</button><button id="step">⏭</button><button id="reset">↺</button>
+<input id="spd" type="range" min="0.25" max="2" step="0.25" value="1" aria-label="Speed"><span id="spdv">1x</span><button id="view"></button></div></section>
+</main>
+<div id="tutor"><div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--line);font-weight:600"><span id="ttl"></span><button class="ask" id="tclose" style="text-decoration:none">✕</button></div>
+<div id="log"></div><div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)"><input type="text" id="q"><button id="send" class="on">➤</button></div></div>
+<div id="prac"><div><div style="display:flex;justify-content:space-between;gap:8px"><h2 id="pt" style="margin:0"></h2><button id="pclose">✕</button></div>
+<p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="ptopic"></select><button id="pnew"></button><span id="psc" style="margin-left:auto;color:var(--mut)"></span></p>
+<div class="card" id="pq" style="font-size:16px"></div>
+<p style="display:flex;gap:8px"><input type="text" id="pans" inputmode="decimal" placeholder="…"><span id="pu" style="align-self:center;white-space:nowrap"></span><button id="pchk" class="on"></button></p>
+<p id="pfb" style="font-weight:600;min-height:1.4em"></p><p style="display:flex;gap:14px;align-items:center"><button id="psb"></button><button class="ask" id="pai"></button></p><div class="warn" id="pwarn" hidden></div><div id="psol"></div></div></div>
+<button id="fab" aria-label="AI Tutor">💬</button>
+<div id="sheet"><div><div style="display:flex;justify-content:space-between"><h2 id="shh" style="margin:0"></h2><button id="sclose">✕</button></div><div id="shb"></div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const TX={id:{words:"Rumus Bahasa Manusia",ask:"Belum paham? Tanya AI",sheet:"📘 Contekan Rumus",tutor:"Tutor Fisika AI",ph:"Tanya apa saja…",split:"Split View",full:"Full 3D",upl:"Foto Soal (OCR)",cust:"Soal sendiri",err:"Tutor belum tersedia di sini.",step:"Langkah",ana:"Tolong jelaskan langkah ini dengan analogi sederhana."},
+en:{words:"Plain-Language Formula",ask:"Confused? Ask AI",sheet:"📘 Formula Sheet",tutor:"AI Physics Tutor",ph:"Ask anything…",split:"Split View",full:"Full 3D",upl:"Photo Problem (OCR)",cust:"Your own problem",err:"Tutor is not available here.",step:"Step",ana:"Please explain this step with a simple analogy."}};
+const S=(wi,we,l,ei,ee,c)=>({w:{id:wi,en:we},l,e:{id:ei,en:ee},c});
+const B=(id,sh,m,r,p,v,col)=>({id,sh,m,r,p:[...p],v:[...v],a:[0,0,0],col});
+const c45=20*Math.SQRT1_2;
+const SC=[
+{n:{id:"Gerak Parabola",en:"Projectile Motion"},q:{id:"Bola ditendang 20 m/s dengan sudut 45°. Hitung tinggi maksimum dan jangkauan (g = 9,8 m/s²).",en:"A ball is kicked at 20 m/s at 45°. Find max height and range (g = 9.8 m/s²)."},g:9.8,mu:0,e:0,cam:[20,12,40],look:[20,4,0],b:()=>[B("ball","s",1,.5,[0,.5,0],[c45,c45,0],0x38bdf8)],
+ st:[S("Tinggi Maksimum = (Kecepatan Awal × sin θ)² ÷ (2 × Gravitasi)","Maximum Height = (Initial Velocity × sin θ)² ÷ (2 × Gravity)","h_{\\max} = \\frac{v_o^2 \\sin^2\\theta}{2g}","Di puncak, kecepatan vertikal nol.","At the peak, vertical velocity is zero.","h = (20² × sin²45°) / (2 × 9,8) = 10,2 m"),
+ S("Jarak Mendatar = (Kecepatan Awal² × sin 2θ) ÷ Gravitasi","Range = (Initial Velocity² × sin 2θ) ÷ Gravity","R = \\frac{v_o^2 \\sin 2\\theta}{g}","Sudut 45° memberi jangkauan terjauh.","45° gives the longest range.","R = (400 × 1) / 9,8 = 40,8 m")]},
+{n:{id:"Tumbukan Lenting",en:"Elastic Collision"},q:{id:"Bola 2 kg (3 m/s) menumbuk bola 1 kg yang diam secara lenting sempurna. Cari kecepatan akhir.",en:"A 2 kg ball (3 m/s) hits a stationary 1 kg ball elastically. Find the final velocities."},g:9.8,mu:0,e:1,cam:[6,4,14],look:[6,.5,0],b:()=>[B("A","s",2,.5,[0,.5,0],[3,0,0],0x38bdf8),B("B","s",1,.5,[5,.5,0],[0,0,0],0xf59e0b)],
+ st:[S("Momentum Awal = Momentum Akhir","Initial Momentum = Final Momentum","m_1 v_1 + m_2 v_2 = m_1 v_1' + m_2 v_2'","Momentum total kekal.","Total momentum is conserved.","p = 2×3 + 1×0 = 6 kg·m/s"),
+ S("Kecepatan Bola 2 = 2 × Massa 1 ÷ (Massa 1 + Massa 2) × Kecepatan 1","Velocity 2 = 2 × Mass 1 ÷ (Mass 1 + Mass 2) × Velocity 1","v_2' = \\frac{2 m_1}{m_1+m_2} v_1","Untuk e = 1, energi kinetik juga kekal.","For e = 1, kinetic energy is also conserved.","v₂' = (2×2/3)×3 = 4 m/s ; v₁' = 1 m/s")]},
+{n:{id:"Balok Gesekan",en:"Block with Friction"},q:{id:"Balok 5 kg meluncur 6 m/s di lantai dengan μk = 0,2. Berapa jarak berhenti?",en:"A 5 kg block slides at 6 m/s with μk = 0.2. Find the stopping distance."},g:9.8,mu:.2,e:0,cam:[5,6,16],look:[5,.5,0],b:()=>[B("block","c",5,.5,[0,.5,0],[6,0,0],0xa78bfa)],
+ st:[S("Perlambatan = Koefisien Gesek × Gravitasi","Deceleration = Friction Coefficient × Gravity","a = -\\mu g","Gaya gesek f = μN = μmg.","Friction f = μN = μmg.","a = 0,2 × 9,8 = 1,96 m/s²"),
+ S("Jarak Berhenti = Kecepatan Awal² ÷ (2 × Koefisien Gesek × Gravitasi)","Stopping Distance = Initial Velocity² ÷ (2 × Friction Coefficient × Gravity)","s = \\frac{v_o^2}{2\\mu g}\\quad (v_t = 0)","Dari v_t² = v_o² + 2as dengan v_t = 0.","From v_t² = v_o² + 2as with v_t = 0.","s = 36 / 3,92 = 9,18 m")]},
+{n:{id:"Gerak Jatuh Bebas",en:"Free Fall"},q:{id:"Bola dijatuhkan dari ketinggian 20 m. Berapa waktu jatuh dan kecepatan saat menyentuh tanah?",en:"A ball is dropped from 20 m. Find the fall time and impact speed."},g:9.8,mu:0,e:0,cam:[10,12,30],look:[0,10,0],b:()=>[B("ball","s",1,.5,[0,20.5,0],[0,0,0],0x34d399)],
+ st:[S("Waktu Jatuh = √(2 × Tinggi ÷ Gravitasi)","Fall Time = √(2 × Height ÷ Gravity)","t = \\sqrt{\\frac{2h}{g}}","Kecepatan awal nol, jadi h = ½gt².","Initial velocity is zero, so h = ½gt².","t = √(40/9,8) = 2,02 s"),
+ S("Kecepatan Akhir = Gravitasi × Waktu","Final Velocity = Gravity × Time","v_t = g\\,t","Kecepatan bertambah 9,8 m/s tiap detik.","Speed grows 9.8 m/s every second.","v_t = 9,8 × 2,02 = 19,8 m/s")]},
+{n:{id:"Gerak Melingkar",en:"Circular Motion"},q:{id:"Benda 1 kg bergerak melingkar beraturan, jari-jari 5 m, laju 5 m/s. Hitung kecepatan sudut dan percepatan sentripetal.",en:"A 1 kg object moves in uniform circular motion, radius 5 m, speed 5 m/s. Find angular velocity and centripetal acceleration."},g:9.8,mu:0,e:0,cam:[0,14,12],look:[0,0,0],f:b=>[-b.p[0],0,-b.p[2]],b:()=>[B("m","s",1,.5,[5,.5,0],[0,0,5],0xf472b6)],
+ st:[S("Kecepatan Sudut = Kecepatan Linear ÷ Jari-jari","Angular Velocity = Linear Velocity ÷ Radius","\\omega = \\frac{v}{r}","Satu putaran penuh = 2π rad.","One full turn = 2π rad.","ω = 5 / 5 = 1 rad/s"),
+ S("Percepatan Sentripetal = Kecepatan² ÷ Jari-jari","Centripetal Acceleration = Velocity² ÷ Radius","a_s = \\frac{v^2}{r}","Arahnya selalu ke pusat lingkaran (panah amber).","It always points to the centre (amber arrow).","a_s = 25 / 5 = 5 m/s²")]},
+{n:{id:"Getaran Pegas",en:"Spring Oscillation"},q:{id:"Beban 2 kg pada pegas k = 8 N/m ditarik 3 m lalu dilepas. Hitung periode dan kecepatan maksimum.",en:"A 2 kg mass on a spring (k = 8 N/m) is pulled 3 m and released. Find the period and maximum speed."},g:9.8,mu:0,e:0,cam:[0,6,16],look:[0,.5,0],f:b=>[-4*b.p[0],0,0],U:b=>4*b.p[0]**2,b:()=>[B("m","c",2,.5,[3,.5,0],[0,0,0],0xfb923c)],
+ st:[S("Periode = 2π × √(Massa ÷ Konstanta Pegas)","Period = 2π × √(Mass ÷ Spring Constant)","T = 2\\pi\\sqrt{\\frac{m}{k}}","Pegas lebih kaku membuat getaran lebih cepat.","A stiffer spring vibrates faster.","T = 2π√(2/8) = 3,14 s"),
+ S("Kecepatan Maksimum = Amplitudo × √(Konstanta Pegas ÷ Massa)","Max Velocity = Amplitude × √(Spring Constant ÷ Mass)","v_{\\max} = A\\sqrt{\\frac{k}{m}}","Terjadi saat melewati titik setimbang.","Occurs at the equilibrium point.","v_max = 3 × √(8/2) = 6 m/s")]}];
+const SH=[["Kinematika|Kinematics",[["v_t = v_o + at","Kecepatan Akhir = Kecepatan Awal + Percepatan × Waktu|Final Velocity = Initial Velocity + Acceleration × Time"],["s = v_o t + \\tfrac12 a t^2","Jarak = Kecepatan Awal × Waktu + ½ × Percepatan × Waktu²|Distance = Initial Velocity × Time + ½ × Acceleration × Time²"]]],
+["Dinamika|Dynamics",[["\\Sigma F = ma","Gaya Total = Massa × Percepatan|Net Force = Mass × Acceleration"],["f = \\mu N","Gaya Gesek = Koefisien × Gaya Normal|Friction = Coefficient × Normal Force"]]],
+["Energi|Energy",[["E_k = \\tfrac12 m v^2","Energi Kinetik = ½ × Massa × Kecepatan²|Kinetic Energy = ½ × Mass × Velocity²"],["E_p = m g h","Energi Potensial = Massa × Gravitasi × Tinggi|Potential Energy = Mass × Gravity × Height"]]],
+["Momentum|Momentum",[["p = m v","Momentum = Massa × Kecepatan|Momentum = Mass × Velocity"],["I = F\\,\\Delta t = \\Delta p","Impuls = Gaya × Selang Waktu|Impulse = Force × Time Interval"]]],
+["Gravitasi|Gravitation",[["F = G\\frac{m_1 m_2}{r^2}","Gaya Gravitasi = G × Massa 1 × Massa 2 ÷ Jarak²|Gravitational Force = G × Mass 1 × Mass 2 ÷ Distance²"]]],
+["Gelombang|Waves",[["v = \\lambda f","Cepat Rambat = Panjang Gelombang × Frekuensi|Wave Speed = Wavelength × Frequency"]]],
+["Listrik|Electricity",[["V = I R","Tegangan = Arus × Hambatan|Voltage = Current × Resistance"],["P = V I","Daya = Tegangan × Arus|Power = Voltage × Current"]]]];
+let lang="id",idx=0,playing=false,speed=1,bodies=[],t=0,ctx="";
+const tex=(s,d)=>{try{return katex.renderToString(s,{output:"mathml",displayMode:!!d,throwOnError:false})}catch(e){return s}};
+const L=k=>TX[lang][k];
+
+/* ---------- physics ---------- */
+function integrate(sc,bs,dt){
+  for(const b of bs){
+    const gnd=b.p[1]<=b.r+1e-9&&b.v[1]<=0;
+    b.a=sc.f?sc.f(b):[0,gnd?0:-sc.g,0];
+    if(gnd&&sc.mu>0&&b.v[0]!==0)b.a[0]=-Math.sign(b.v[0])*sc.mu*sc.g;
+    const vx0=b.v[0];
+    for(let i=0;i<3;i++){b.v[i]+=b.a[i]*dt}
+    if(gnd&&sc.mu>0&&vx0*b.v[0]<=0){b.v[0]=0;b.a[0]=0}
+    for(let i=0;i<3;i++){b.p[i]+=b.v[i]*dt}
+    if(b.p[1]<b.r){b.p[1]=b.r;if(b.v[1]<0)b.v[1]=0}
+  }
+  const [A,Bb]=bs;
+  if(Bb&&sc.e>0&&Math.abs(Bb.p[0]-A.p[0])<A.r+Bb.r&&A.v[0]>Bb.v[0]){
+    const M=A.m+Bb.m,du=A.v[0]-Bb.v[0],P=A.m*A.v[0]+Bb.m*Bb.v[0];
+    A.v[0]=(P-Bb.m*sc.e*du)/M;Bb.v[0]=(P+A.m*sc.e*du)/M;
+  }
+  t+=dt;
+}
+/* ---------- 3D ---------- */
+const cv=$("cv"),renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x020617);
+const cam=new THREE.PerspectiveCamera(50,1,.1,500);const ctl=new THREE.OrbitControls(cam,cv);
+scene.add(new THREE.AmbientLight(0xffffff,.6));const sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(10,30,20);scene.add(sun);
+scene.add(new THREE.GridHelper(120,120,0x475569,0x1e293b));
+let meshes=[],vA=[],aA=[];
+function build(){
+  [...meshes,...vA,...aA].forEach(o=>{scene.remove(o);if(o.geometry)o.geometry.dispose()});
+  const sc=SC[idx];bodies=sc.b();t=0;
+  meshes=bodies.map(b=>{const g=b.sh==="c"?new THREE.BoxGeometry(2*b.r,2*b.r,2*b.r):new THREE.SphereGeometry(b.r,32,16);
+    const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:b.col}));scene.add(m);return m});
+  const mk=c=>{const a=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(),1,c,.4,.25);scene.add(a);return a};
+  vA=bodies.map(()=>mk(0x22d3ee));aA=bodies.map(()=>mk(0xf59e0b));
+  cam.position.set(...sc.cam);ctl.target.set(...sc.look);ctl.update();sync();hud();
+}
+function arrow(a,o,v,k){const len=v.length()*k;a.visible=len>.05;if(!a.visible)return;a.position.copy(o);a.setDirection(v.clone().normalize());a.setLength(Math.min(len,12),.4,.25)}
+function sync(){bodies.forEach((b,i)=>{const o=new THREE.Vector3(...b.p);meshes[i].position.copy(o);arrow(vA[i],o,new THREE.Vector3(...b.v),.5);arrow(aA[i],o,new THREE.Vector3(...b.a),.8)})}
+const f=n=>n.toFixed(2);
+function hud(){
+  const sc=SC[idx],b=bodies[0];let k=0,u=0;
+  for(const x of bodies){k+=.5*x.m*(x.v[0]**2+x.v[1]**2+x.v[2]**2);u+=sc.U?sc.U(x):x.m*sc.g*(x.p[1]-x.r)}
+  $("hud").innerHTML=`t = ${f(t)} s<br>(x,y,z) = ${b.p.map(f).join(", ")} m<br>(v<sub>x</sub>,v<sub>y</sub>,v<sub>z</sub>) = ${b.v.map(f).join(", ")} m/s<br>E<sub>k</sub> = ${f(k)} J · E<sub>p</sub> = ${f(u)} J<br>E<sub>total</sub> = ${f(k+u)} J<br><span style="color:#22d3ee">■ v</span> <span style="color:#f59e0b">■ a</span>`;
+}
+function resize(){const r=$("simwrap");renderer.setSize(r.clientWidth,r.clientHeight,false);cam.aspect=r.clientWidth/Math.max(r.clientHeight,1);cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe($("simwrap"));
+let last=performance.now(),n=0;
+(function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
+  if(playing){const h=dt*speed,s=Math.max(1,Math.ceil(h/.004));for(let i=0;i<s;i++)integrate(SC[idx],bodies,h/s)}
+  sync();if(++n%6===0)hud();ctl.update();renderer.render(scene,cam)})(last);
+
+/* ---------- UI ---------- */
+function render(){
+  document.documentElement.lang=lang;const sc=SC[idx];
+  $("presets").innerHTML="";SC.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.n[lang];b.className=i===idx?"on":"";b.style.marginRight="6px";b.onclick=()=>{idx=i;playing=false;$("play").textContent="▶";build();render()};$("presets").appendChild(b)});
+  $("problem").textContent=sc.q[lang];
+  $("steps").innerHTML=sc.st.map((s,i)=>`<article class="card"><div class="lbl">${L("words")} · ${i+1}</div><p style="margin:4px 0;font-weight:600">${s.w[lang]}</p><div class="tex">${tex(s.l,true)}</div><p style="margin:4px 0;color:var(--mut);font-size:14px">${s.e[lang]}</p><div class="calc">${s.c}</div><button class="ask" data-i="${i}" style="margin-top:6px">${L("ask")}</button></article>`).join("");
+  document.querySelectorAll(".ask[data-i]").forEach(b=>b.onclick=()=>{const s=sc.st[+b.dataset.i];ask(L("ana"),`${sc.q[lang]} | ${s.w[lang]} | ${s.l} | ${s.c}`);});
+  $("bsheet").textContent=L("sheet");$("blang").textContent=lang.toUpperCase();$("ttl").textContent=L("tutor");$("q").placeholder=L("ph");
+  $("view").textContent=$("main").classList.contains("full")?L("split"):L("full");
+  fillP();$("clbl").textContent=L("cust");$("ulbl").textContent=L("upl");$("cask").textContent=L("ask");$("shh").textContent=L("sheet");
+  $("shb").innerHTML=SH.map(([c,it])=>`<h3 style="color:var(--acc);margin:14px 0 2px">${c.split("|")[lang==="id"?0:1]}</h3>`+it.map(([l,w])=>`<div class="row"><span style="color:var(--mut)">${w.split("|")[lang==="id"?0:1]}</span><span>${tex(l)}</span></div>`).join("")).join("");
+}
+$("blang").onclick=()=>{lang=lang==="id"?"en":"id";render()};
+$("play").onclick=()=>{playing=!playing;$("play").textContent=playing?"⏸":"▶"};
+$("step").onclick=()=>{playing=false;$("play").textContent="▶";integrate(SC[idx],bodies,1/30);sync();hud()};
+$("reset").onclick=()=>{playing=false;$("play").textContent="▶";build()};
+$("spd").oninput=e=>{speed=+e.target.value;$("spdv").textContent=speed+"x"};
+$("view").onclick=()=>{$("main").classList.toggle("full");render();setTimeout(resize,30)};
+$("bsheet").onclick=()=>$("sheet").classList.add("open");$("sclose").onclick=()=>$("sheet").classList.remove("open");
+$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.remove("open")};
+$("fab").onclick=()=>$("tutor").classList.toggle("open");$("tclose").onclick=()=>$("tutor").classList.remove("open");
+
+/* ---------- AI tutor (Netlify Function -> Gemini) ---------- */
+let sample=null,limits=null;
+const fileB64=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=()=>no(new Error("read"));r.readAsDataURL(f)});
+async function callAI(prompt,file){
+  const body={prompt};if(file)body.image={mime:file.type,data:await fileB64(file)};
+  const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw {code:r.status===429?"rate_limited":"error",message:d.error||"error"};
+  return d.text||""}
+const shim=async(input,opts)=>{const o=opts||{};const text=await callAI(input,o.images&&o.images[0]);if(o.onText)o.onText({text});return{text}};
+shim.json=async input=>JSON.parse((await callAI(input)).replace(/```json|```/g,"").trim());
+shim.limits=async()=>({images:true});
+async function getS(){sample=shim;limits=await shim.limits();return sample}
+getS();
+function msg(cls,text){const d=document.createElement("div");d.className="m "+cls;d.textContent=text;$("log").appendChild(d);$("log").scrollTop=1e9;return d}
+async function ask(question,context){
+  $("tutor").classList.add("open");if(context)ctx=context;msg("u",question);const out=msg("a","…");
+  if(!(await getS())){out.textContent=L("err");return}
+  const sys=`Kamu tutor fisika SMA yang hangat dan menyemangati. Jelaskan singkat, langkah demi langkah, dengan analogi sehari-hari dan satuan SI. Jawab dalam ${lang==="id"?"Bahasa Indonesia":"English"}.`;
+  try{const r=await sample(`${sys}\n\nKonteks: ${ctx||"-"}\n\nSiswa: ${question}`,{cache:false,onText:({text})=>{out.textContent=text}});out.textContent=r.text}
+  catch(e){out.textContent=e&&e.code==="rate_limited"?I("Terlalu banyak permintaan, coba lagi sebentar lagi.","Too many requests, please try again shortly."):L("err")}
+}
+$("send").onclick=()=>{const v=$("q").value.trim();if(v){$("q").value="";ask(v)}};
+$("q").onkeydown=e=>{if(e.key==="Enter")$("send").click()};
+$("cask").onclick=()=>{const v=$("custom").value.trim();if(v)ask(L("ana").replace(/langkah ini|this step/,lang==="id"?"soal ini":"this problem"),v)};
+$("file").onchange=async e=>{const file=e.target.files[0];if(!file)return;
+  await getS();if(!sample||!limits||!limits.images){$("custom").value=L("err");return}
+  $("custom").value="…";
+  try{const r=await sample("Transcribe the physics problem in the image as plain text. Output only the problem.",{images:[file],cache:false});$("custom").value=r.text;warnC()}
+  catch(err){$("custom").value=L("err")}};
+/* ---------- Latihan / Practice (Kelas 10-11) ---------- */
+const I=(a,b)=>lang==="id"?a:b;
+const R=(a,b,st=1)=>a+st*Math.floor(Math.random()*((b-a)/st+1)),N=(x,d=2)=>String(+x.toFixed(d)),SN=Math.sin,DG=Math.PI/180;
+const mk=(q0,q1,w0,w1,l,c,a,u)=>({q:[q0,q1],w:[w0,w1],l,c,a,u});
+const GEN=[
+["10","GLBB|Uniformly Accelerated Motion",()=>{const v=R(2,10),a=R(1,5),t=R(2,8),s=v*t+a*t*t/2;return mk(`Benda berkecepatan awal ${v} m/s dan percepatan ${a} m/s². Berapa jarak tempuh dalam ${t} s?`,`An object has initial velocity ${v} m/s and acceleration ${a} m/s². How far does it travel in ${t} s?`,"Jarak = Kecepatan Awal × Waktu + ½ × Percepatan × Waktu²","Distance = Initial Velocity × Time + ½ × Acceleration × Time²","s = v_o t + \\tfrac12 a t^2",`s = ${v}×${t} + ½×${a}×${t}² = ${N(s)} m`,s,"m")}],
+["10","Gerak Parabola|Projectile Motion",()=>{const v=R(10,30,5),t=[30,45,60][R(0,2)],h=(v*SN(t*DG))**2/19.6;return mk(`Bola dilempar ${v} m/s dengan sudut ${t}°. Berapa tinggi maksimumnya? (g = 9,8 m/s²)`,`A ball is thrown at ${v} m/s at ${t}°. Find its maximum height. (g = 9.8 m/s²)`,"Tinggi Maksimum = (Kecepatan Awal × sin θ)² ÷ (2 × Gravitasi)","Maximum Height = (Initial Velocity × sin θ)² ÷ (2 × Gravity)","h_{\\max} = \\frac{v_o^2 \\sin^2\\theta}{2g}",`h = (${v}×sin${t}°)² / (2×9.8) = ${N(h)} m`,h,"m")}],
+["10","Gerak Melingkar|Circular Motion",()=>{const r=R(2,10),v=R(4,20,2),a=v*v/r;return mk(`Benda bergerak melingkar beraturan dengan jari-jari ${r} m dan laju ${v} m/s. Hitung percepatan sentripetalnya.`,`An object moves in uniform circular motion with radius ${r} m and speed ${v} m/s. Find its centripetal acceleration.`,"Percepatan Sentripetal = Kecepatan² ÷ Jari-jari","Centripetal Acceleration = Velocity² ÷ Radius","a_s = \\frac{v^2}{r}",`a_s = ${v}² / ${r} = ${N(a)} m/s²`,a,"m/s²")}],
+["10","Hukum Newton II|Newton's Second Law",()=>{const m=R(2,10),F=R(40,90,10),u=[.1,.2,.3][R(0,2)],a=(F-u*m*9.8)/m;return mk(`Balok ${m} kg ditarik gaya mendatar ${F} N pada lantai kasar (μk = ${u}). Hitung percepatannya.`,`A ${m} kg block is pulled by a horizontal ${F} N force on a rough floor (μk = ${u}). Find its acceleration.`,"Percepatan = (Gaya − Koefisien Gesek × Massa × Gravitasi) ÷ Massa","Acceleration = (Force − Friction Coefficient × Mass × Gravity) ÷ Mass","a = \\frac{F - \\mu m g}{m}",`a = (${F} − ${u}×${m}×9.8) / ${m} = ${N(a)} m/s²`,a,"m/s²")}],
+["10","Bidang Miring|Inclined Plane",()=>{const t=[30,45,60][R(0,2)],a=9.8*SN(t*DG);return mk(`Benda meluncur pada bidang miring licin bersudut ${t}°. Hitung percepatannya.`,`An object slides down a frictionless incline at ${t}°. Find its acceleration.`,"Percepatan = Gravitasi × sin θ","Acceleration = Gravity × sin θ","a = g\\sin\\theta",`a = 9.8 × sin${t}° = ${N(a)} m/s²`,a,"m/s²")}],
+["10","Energi Kinetik|Kinetic Energy",()=>{const m=R(2,10),v=R(2,12),e=m*v*v/2;return mk(`Benda bermassa ${m} kg bergerak dengan kecepatan ${v} m/s. Berapa energi kinetiknya?`,`A ${m} kg object moves at ${v} m/s. What is its kinetic energy?`,"Energi Kinetik = ½ × Massa × Kecepatan²","Kinetic Energy = ½ × Mass × Velocity²","E_k = \\tfrac12 m v^2",`E_k = ½×${m}×${v}² = ${N(e)} J`,e,"J")}],
+["10","Momentum & Tumbukan|Momentum & Collisions",()=>{const m1=R(2,6),v1=R(4,10),m2=R(1,5),v=m1*v1/(m1+m2);return mk(`Benda ${m1} kg (${v1} m/s) menumbuk benda ${m2} kg yang diam, lalu keduanya menyatu. Berapa kecepatan setelah tumbukan?`,`A ${m1} kg object (${v1} m/s) hits a stationary ${m2} kg object and they stick together. Find the final speed.`,"Kecepatan Akhir = (Massa 1 × Kecepatan 1) ÷ (Massa 1 + Massa 2)","Final Velocity = (Mass 1 × Velocity 1) ÷ (Mass 1 + Mass 2)","v' = \\frac{m_1 v_1}{m_1+m_2}",`v' = (${m1}×${v1}) / (${m1}+${m2}) = ${N(v)} m/s`,v,"m/s")}],
+["10","Gravitasi|Gravitation",()=>{const n=R(2,4),r=1/(n*n);return mk(`Jarak dua benda dijadikan ${n} kali semula. Gaya gravitasi menjadi berapa kali semula?`,`The distance between two bodies becomes ${n} times larger. By what factor does the gravitational force change?`,"Gaya Gravitasi ∝ 1 ÷ Jarak²","Gravitational Force ∝ 1 ÷ Distance²","F \\propto \\frac{1}{r^2}",`F'/F = 1/${n}² = ${N(r,3)}`,r,"× F")}],
+["11","Getaran Pegas|Spring Oscillation",()=>{const m=R(1,5),k=R(20,100,10),T=2*Math.PI*Math.sqrt(m/k);return mk(`Beban ${m} kg digantung pada pegas dengan k = ${k} N/m. Hitung periode getarannya.`,`A ${m} kg mass hangs on a spring with k = ${k} N/m. Find its oscillation period.`,"Periode = 2π × √(Massa ÷ Konstanta Pegas)","Period = 2π × √(Mass ÷ Spring Constant)","T = 2\\pi\\sqrt{\\frac{m}{k}}",`T = 2π√(${m}/${k}) = ${N(T)} s`,T,"s")}],
+["11","Gelombang|Waves",()=>{const l=R(2,10),f=R(5,50,5),v=l*f;return mk(`Gelombang memiliki panjang ${l} m dan frekuensi ${f} Hz. Berapa cepat rambatnya?`,`A wave has wavelength ${l} m and frequency ${f} Hz. Find its speed.`,"Cepat Rambat = Panjang Gelombang × Frekuensi","Wave Speed = Wavelength × Frequency","v = \\lambda f",`v = ${l} × ${f} = ${v} m/s`,v,"m/s")}],
+["11","Fluida Statis|Static Fluids",()=>{const h=R(2,30),P=9.8*h;return mk(`Berapa tekanan hidrostatis pada kedalaman ${h} m di air (ρ = 1000 kg/m³, g = 9,8 m/s²)? Jawab dalam kPa.`,`What is the hydrostatic pressure at ${h} m depth in water (ρ = 1000 kg/m³, g = 9.8 m/s²)? Answer in kPa.`,"Tekanan = Massa Jenis × Gravitasi × Kedalaman","Pressure = Density × Gravity × Depth","P = \\rho g h",`P = 1000×9.8×${h} = ${N(P*1000,0)} Pa = ${N(P)} kPa`,P,"kPa")}],
+["11","Fluida Dinamis|Moving Fluids",()=>{const A=R(4,12,2),v=R(2,6),B2=R(1,3),r=A*v/B2;return mk(`Air mengalir di pipa luas ${A} cm² dengan laju ${v} m/s, lalu menyempit menjadi ${B2} cm². Berapa laju air di penyempitan?`,`Water flows in a ${A} cm² pipe at ${v} m/s, then narrows to ${B2} cm². Find the speed in the narrow part.`,"Luas 1 × Kecepatan 1 = Luas 2 × Kecepatan 2","Area 1 × Velocity 1 = Area 2 × Velocity 2","A_1 v_1 = A_2 v_2",`v₂ = (${A}×${v}) / ${B2} = ${N(r)} m/s`,r,"m/s")}],
+["11","Gas Ideal (Isotermal)|Ideal Gas (Isothermal)",()=>{const P1=R(1,4),V1=R(2,6),V2=R(1,8),P2=P1*V1/V2;return mk(`Gas ideal ${P1} atm dan ${V1} L berubah isotermal menjadi ${V2} L. Berapa tekanan akhirnya (atm)?`,`An ideal gas at ${P1} atm and ${V1} L changes isothermally to ${V2} L. Find the final pressure (atm).`,"Tekanan 1 × Volume 1 = Tekanan 2 × Volume 2","Pressure 1 × Volume 1 = Pressure 2 × Volume 2","P_1 V_1 = P_2 V_2",`P₂ = (${P1}×${V1}) / ${V2} = ${N(P2)} atm`,P2,"atm")}],
+["11","Kalor|Heat",()=>{const m=R(1,5),d=R(10,60,5),Q=m*4.2*d;return mk(`Berapa kalor untuk menaikkan suhu ${m} kg air sebesar ${d} °C? (c = 4200 J/kg·°C) Jawab dalam kJ.`,`How much heat raises ${m} kg of water by ${d} °C? (c = 4200 J/kg·°C) Answer in kJ.`,"Kalor = Massa × Kalor Jenis × Kenaikan Suhu","Heat = Mass × Specific Heat × Temperature Rise","Q = m c \\Delta T",`Q = ${m}×4200×${d} = ${m*4200*d} J = ${N(Q)} kJ`,Q,"kJ")}],
+["11","Torsi (Dinamika Rotasi)|Torque (Rotation)",()=>{const F=R(10,50,5),r=R(1,5)/2,t=[30,90][R(0,1)],tau=F*r*SN(t*DG);return mk(`Gaya ${F} N bekerja pada lengan ${r} m dengan sudut ${t}° terhadap lengan. Hitung torsinya.`,`A ${F} N force acts on a ${r} m lever arm at ${t}° to the arm. Find the torque.`,"Torsi = Gaya × Lengan × sin θ","Torque = Force × Arm × sin θ","\\tau = F\\,r\\sin\\theta",`τ = ${F}×${r}×sin${t}° = ${N(tau)} N·m`,tau,"N·m")}]];
+let P=null,sc2=[0,0];
+const K=()=>lang==="id"?0:1;
+function fillP(){const s=$("ptopic"),cur=s.value||"r";
+  s.innerHTML=`<option value="r">${I("🎲 Acak (Kelas 10–11)","🎲 Random (Grade 10–11)")}</option>`+GEN.map((g,i)=>`<option value="${i}">${I("Kelas","Grade")} ${g[0]} · ${g[1].split("|")[K()]}</option>`).join("");
+  s.value=cur;$("bprac").textContent=I("🧪 Latihan","🧪 Practice");$("pt").textContent=I("Latihan Soal","Practice Problems");
+  $("pnew").textContent=I("Soal baru","New problem");$("pchk").textContent=I("Cek","Check");$("psb").textContent=I("Pembahasan","Solution");$("pai").textContent=L("ask");
+  $("psc").textContent=`${I("Skor","Score")}: ${sc2[0]}/${sc2[1]}`;if(P){$("pq").textContent=P.q[K()];$("psol").innerHTML&&showSol()}warnP();warnC()}
+function newQ(){const v=$("ptopic").value,i=v==="r"?R(0,GEN.length-1):+v;P=GEN[i][2]();P.done=false;P.i=i;
+  $("pq").textContent=P.q[K()];$("pu").textContent=P.u;$("pans").value="";$("pfb").textContent="";$("psol").innerHTML="";warnP()}
+function showSol(){if(!P)return;$("psol").innerHTML=`<div class="card"><div class="lbl">${L("words")}</div><p style="margin:4px 0;font-weight:600">${P.w[K()]}</p><div class="tex">${tex(P.l,true)}</div><div class="calc">${P.c}</div></div>`}
+function chk(){if(!P)return;const x=parseFloat($("pans").value.replace(",","."));if(isNaN(x))return;
+  const ok=Math.abs(x-P.a)<=Math.max(Math.abs(P.a)*.02,.02);
+  if(!P.done){P.done=true;sc2[1]++;if(ok)sc2[0]++}
+  $("pfb").textContent=ok?I("✅ Benar!","✅ Correct!"):I("❌ Belum tepat. Coba lagi atau lihat pembahasan.","❌ Not quite. Try again or see the solution.");
+  $("pfb").style.color=ok?"var(--ok)":"#ef4444";$("psc").textContent=`${I("Skor","Score")}: ${sc2[0]}/${sc2[1]}`;if(ok)showSol()}
+$("bprac").onclick=()=>{$("prac").classList.add("open");if(!P)newQ()};$("pclose").onclick=()=>$("prac").classList.remove("open");
+$("prac").onclick=e=>{if(e.target===$("prac"))$("prac").classList.remove("open")};
+$("pnew").onclick=newQ;$("ptopic").onchange=newQ;$("pchk").onclick=chk;$("psb").onclick=showSol;
+$("pans").onkeydown=e=>{if(e.key==="Enter")chk()};
+$("pai").onclick=()=>{if(!P)return;$("prac").classList.remove("open");ask(L("ana").replace(/langkah ini|this step/,I("soal ini","this problem")),`${P.q[K()]} | ${P.w[K()]} | ${P.l} | ${P.c}`)};
+const SIMOF={1:0,2:4,3:2,8:5};
+function warnP(){const w=$('pwarn');if(!P){w.hidden=true;return}const si=SIMOF[P.i];w.hidden=false;
+  if(si===undefined){w.textContent=I('⚠️ Simulasi 3D belum tersedia untuk topik ini. Kamu tetap bisa berlatih soal dan pembahasannya, dan bertanya ke tutor AI kalau bingung.','⚠️ No 3D simulation is available for this topic yet. You can still practise the problems and solutions, and ask the AI tutor if you’re stuck.')}
+  else{w.innerHTML=`🎬 ${I('Topik ini punya simulasi 3D.','This topic has a 3D simulation.')} <button class='ask' id='pgo'>${I('Lihat simulasi','Open simulation')}</button>`;$('pgo').onclick=()=>{$('prac').classList.remove('open');idx=si;playing=false;$('play').textContent='▶';build();render()}}}
+function warnC(){$('csolve').textContent=I('🤖 Selesaikan dengan AI','🤖 Solve with AI');const v=$('custom').value.trim();$('cwarn').hidden=!v;$('cwarn').textContent=I('⚠️ Simulasi 3D tidak tersedia untuk soal buatanmu sendiri. Soal ini hanya bisa dijelaskan lewat tutor AI. Pilih salah satu soal preset di atas untuk melihat versi 3D-nya.','⚠️ No 3D simulation for custom problems. This one can only be explained by the AI tutor. Pick one of the presets above to see a 3D version.')}
+$('custom').oninput=warnC;
+const esc=x=>String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function solveC(){const v=$('custom').value.trim();if(!v)return;const box=$('cres');
+  box.innerHTML=`<p>⏳ ${I('AI sedang menyusun penyelesaian…','The AI is working out the solution…')}</p>`;
+  if(!(await getS())){box.innerHTML=`<div class='warn'>${esc(L('err'))}</div>`;return}
+  const k=lang==='id'?'Bahasa Indonesia':'English';
+  try{const r=await sample.json(`Kamu guru fisika SMA. Selesaikan soal berikut. Tulis semua teks dalam ${k}. Balas HANYA JSON dengan bentuk {"steps":[{"words":"rumus dalam kata-kata, mis. Kalor = Massa × Kalor Jenis × Kenaikan Suhu","latex":"rumus LaTeX untuk KaTeX; pakai v_o untuk kecepatan awal dan v_t untuk kecepatan akhir","explain":"penjelasan singkat","calc":"perhitungan angka dengan satuan SI"}],"answer":"jawaban akhir dengan satuan"}. Maksimal 5 langkah.\n\nSoal: ${v}`,{cache:false});
+    box.innerHTML=r.steps.map((x,i)=>`<article class='card'><div class='lbl'>${L('words')} · ${i+1}</div><p style='margin:4px 0;font-weight:600'>${esc(x.words)}</p><div class='tex'>${tex(String(x.latex),true)}</div><p style='margin:4px 0;color:var(--mut);font-size:14px'>${esc(x.explain)}</p><div class='calc'>${esc(x.calc)}</div></article>`).join('')+`<div class='card'><b>${I('Jawaban','Answer')}:</b> <span class='calc'>${esc(r.answer)}</span></div>`}
+  catch(e){box.innerHTML=`<div class='warn'>${esc(e&&e.code==='rate_limited'?I('Terlalu banyak permintaan, coba lagi sebentar lagi.','Too many requests, please try again shortly.'):L('err'))}</div>`}}
+$('csolve').onclick=solveC;
+build();render();resize();
+</script></body></html>
